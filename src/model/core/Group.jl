@@ -10,10 +10,11 @@ end
 Group(
     child_list::Vector;
     parent::Union{WeakRef, Nothing}    = nothing,
+    child_index_current::Int           = 1,
     mode::Symbol                       = :sequential,
     callback_enter::Vector{<:Function} = Function[],
     callback_exit::Vector{<:Function}  = Function[]
-) = Group(Vector{Node}(child_list), 1, parent, mode, callback_enter, callback_exit)
+) = Group(Vector{Node}(child_list), child_index_current, parent, mode, callback_enter, callback_exit)
 
 AbstractTrees.nodevalue(group::Group) = (
     child_list          = group.child_list,

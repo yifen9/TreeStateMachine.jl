@@ -19,7 +19,7 @@ function build(data::NamedTuple; parent_reference::Bool = true)
         else
             mode = get(data, :mode, :sequential)
             group = Model.Group(
-                Vector{Node}();
+                Vector{Model.Node}();
                 parent,
                 mode,
                 callback_enter,
@@ -54,6 +54,6 @@ end
 
 build(data::AbstractVector; parent_reference::Bool = true) = build((child_list = data,); parent_reference)
 
-build(data; parent_reference::Bool = true) = build((value = data,); parent_reference)
+build(data::Any; parent_reference::Bool = true) = build((value = data,); parent_reference)
 
 end
