@@ -8,7 +8,7 @@ using JSON3
 using ..Model
 using ..Builder
 
-function _dict_normalize!(dict::Dict{String, Any}, map::Dict{String, Function})
+function _dict_normalize!(dict::Dict{String, Any}, map::Dict{String, <:Function})
     for (key, value) in dict
         haskey(map, key) && (dict[key] = map[key](value))
         if isa(dict[key], Dict{String, Any})
@@ -27,7 +27,7 @@ function to_namedtuple(data::Union{Model.Node, Dict{String, Any}})
         if isa(data, Model.Leaf)
             return (
                 value          = data.value,
-                parent         = data.parent,
+                parent         = isa(data.parent, WeakRef) ? true : false,
                 callback_enter = data.callback_enter,
                 callback_exit  = data.callback_exit,
             )
@@ -36,7 +36,7 @@ function to_namedtuple(data::Union{Model.Node, Dict{String, Any}})
             return (
                 child_list          = child_namedtuple,
                 child_index_current = data.child_index_current,
-                parent              = data.parent,
+                parent              = isa(data.parent, WeakRef) ? true : false,
                 mode                = data.mode,
                 callback_enter      = data.callback_enter,
                 callback_exit       = data.callback_exit,
@@ -49,11 +49,11 @@ function to_namedtuple(data::Union{Model.Node, Dict{String, Any}})
                 child_list = [ to_namedtuple(child) for child in data_child_list ]
                 return (
                     child_list          = child_list,
-                    child_index_current = get(data, "child_index_current", 1),
-                    parent              = get(data, "parent", nothing),
-                    mode                = get(data, "mode", :sequential),
-                    callback_enter      = get(data, "callback_enter", Function[]),
-                    callback_exit       = get(data, "callback_exit",  Function[])
+                    child_index_current = data["child_index_current"],
+                    parent              = data["parent"],
+                    mode                = data["mode"],
+                    callback_enter      = data["callback_enter"],
+                    callback_exit       = data["callback_exit"]
                 )
             else
                 error("Group dict[:child_list] must be a Vector")
@@ -62,9 +62,9 @@ function to_namedtuple(data::Union{Model.Node, Dict{String, Any}})
             if haskey(data, "value")
                 return (
                     value          = data["value"],
-                    parent         = get(data, "parent", nothing),
-                    callback_enter = get(data, "callback_enter", Function[]),
-                    callback_exit  = get(data, "callback_exit",  Function[])
+                    parent         = data["parent"],
+                    callback_enter = data["callback_enter"],
+                    callback_exit  = data["callback_exit"]
                 )
             else
                 error("Empty Leaf value")
@@ -84,6 +84,7 @@ function to_dict(data::Union{Model.Node, NamedTuple})
         if key_list == key_leaf
             return Dict(
                 "value"          => data.value,
+                "parent"         => data.parent,
                 "callback_enter" => data.callback_enter,
                 "callback_exit"  => data.callback_exit
             )
@@ -112,6 +113,7 @@ function json_export(data::Union{Model.Node, NamedTuple, Dict{String, Any}}; pat
             data
         end
     end
+    _dict_normalize!(dict, Dict("parent" => (v -> isa(v, Bool) ? v : (isa(v, WeakRef) ? true : false))))
     if path === nothing
         return JSON3.write(dict)
     else
@@ -125,12 +127,15 @@ end
 function json_import(source::AbstractString; return_type::Type=Dict{String,Any})
     text = isfile(source) ? read(source, String) : source
     dict = JSON3.read(text, Dict{String, Any})
+
     _dict_normalize!(dict, Dict(
-        "mode"           => (v -> isa(v, String) ? Symbol(v) : v),
+        "parent"         => (v -> Bool(v)),
+        "mode"           => (v -> isa(v, String) ? Symbol(v)   : v),
         "callback_enter" => (v -> isa(v, Vector{Function}) ? v : Vector{Function}(v)),
         "callback_exit"  => (v -> isa(v, Vector{Function}) ? v : Vector{Function}(v))
     ))
-    if return_type === Dict{String,Any}
+
+    if return_type === Dict{String,Any} || return_type === Dict
         return dict
     elseif return_type === NamedTuple
         return to_namedtuple(dict)

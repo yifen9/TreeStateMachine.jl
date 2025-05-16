@@ -5,10 +5,6 @@ export build
 using ..Model
 
 function build(data::NamedTuple; parent_reference::Bool = true)
-    data_parent_reference = haskey(data, :parent) ? data.parent : parent_reference
-    data_parent = (data_parent_reference === false) ? nothing : data_parent_reference
-
-    parent = (data_parent === true) ? nothing : data_parent
     callback_enter = get(data, :callback_enter, Function[])
     callback_exit  = get(data, :callback_exit,  Function[])
 
@@ -20,14 +16,13 @@ function build(data::NamedTuple; parent_reference::Bool = true)
             mode = get(data, :mode, :sequential)
             group = Model.Group(
                 Vector{Model.Node}();
-                parent,
                 mode,
                 callback_enter,
                 callback_exit
             )
             for data_child in data_child_list
                 child = build(data_child; parent_reference)
-                (data_parent_reference !== false) && (child.parent = WeakRef(group))
+                parent_reference && (child.parent = WeakRef(group))
                 push!(group.child_list, child)
             end
             return group
@@ -42,7 +37,6 @@ function build(data::NamedTuple; parent_reference::Bool = true)
             end
             return Model.Leaf(
                 value;
-                parent,
                 callback_enter,
                 callback_exit
             )

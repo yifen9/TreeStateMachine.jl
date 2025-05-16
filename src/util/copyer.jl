@@ -25,6 +25,7 @@ function copy(group::Model.Group)
     )
     for child in group.child_list
         child_new = copy(child)
+        isa(group.parent, WeakRef) && (child_new.parent = WeakRef(group))
         push!(group_new.child_list, child_new)
     end
     return group_new

@@ -15,7 +15,7 @@ using JSON3
             @test isa(leaf_nt, NamedTuple)
 
             @test haskey(leaf_nt, :value) && leaf_nt.value == 7
-            @test haskey(leaf_nt, :parent) && leaf_nt.parent === nothing
+            @test haskey(leaf_nt, :parent) && leaf_nt.parent === false
             @test haskey(leaf_nt, :callback_enter) && leaf_nt.callback_enter == leaf.callback_enter
             @test haskey(leaf_nt, :callback_exit)  && leaf_nt.callback_exit  == leaf.callback_exit
         end
@@ -36,7 +36,7 @@ using JSON3
 
             @test haskey(group_nt, :child_index_current) && group_nt.child_index_current == 2
 
-            @test haskey(group_nt, :parent) && group_nt.parent === nothing
+            @test haskey(group_nt, :parent) && group_nt.parent === false
             @test haskey(group_nt, :mode) && group_nt.mode == :parallel
             @test haskey(group_nt, :callback_enter) && group_nt.callback_enter == group.callback_enter
             @test haskey(group_nt, :callback_exit)  && group_nt.callback_exit  == group.callback_exit
@@ -60,7 +60,7 @@ using JSON3
 
             @test haskey(group_nt, :child_index_current) && group_nt.child_index_current == 2
 
-            @test haskey(group_nt, :parent) && group_nt.parent === nothing
+            @test haskey(group_nt, :parent) && group_nt.parent === false
             @test haskey(group_nt, :mode) && group_nt.mode == :parallel
             @test haskey(group_nt, :callback_enter) && group_nt.callback_enter == group.callback_enter
             @test haskey(group_nt, :callback_exit)  && group_nt.callback_exit  == group.callback_exit
@@ -159,22 +159,9 @@ using JSON3
         end
 
         @testset "return_type NamedTuple" begin
-            nt_cfg = (
-                child_list = [(
-                    value = 10,
-                    parent = nothing,
-                    callback_enter = Function[],
-                    callback_exit=Function[]
-                )],
-                child_index_current = 1,
-                parent         = nothing,
-                mode           = :sequential,
-                callback_enter = Function[],
-                callback_exit  = Function[]
-            )
+            nt_cfg = (child_list = [(value = 10,)],)
             tree = Builder.build(nt_cfg)
             dict = Serialization.to_dict(tree)
-
             nt_default = Serialization.json_import(Serialization.json_export(dict))
             nt = Serialization.json_import(Serialization.json_export(dict); return_type=NamedTuple)
 
@@ -183,19 +170,7 @@ using JSON3
         end
 
         @testset "return_type Node" begin
-            nt_cfg = (
-                child_list = [(
-                    value = 10,
-                    parent = nothing,
-                    callback_enter = Function[],
-                    callback_exit=Function[]
-                )],
-                child_index_current = 1,
-                parent         = nothing,
-                mode           = :sequential,
-                callback_enter = Function[],
-                callback_exit  = Function[]
-            )
+            nt_cfg = (child_list = [(value = 10,)],)
             tree = Builder.build(nt_cfg)
             json_str = Serialization.json_export(tree)
 
@@ -218,5 +193,32 @@ using JSON3
 
             @test file_dict == dict
         end
+    end
+
+    @testset "Complex" begin
+        node = Builder.build([1, [2, 3], 4])
+
+        nt_from_node = Serialization.to_namedtuple(node)
+        dict_from_node = Serialization.to_dict(node)
+        dict_from_nt = Serialization.to_dict(nt_from_node)
+        node_from_nt = Builder.build(nt_from_node)
+        node_from_dict = Builder.build(Serialization.to_namedtuple(dict_from_nt))
+        nt_from_dict = Serialization.to_namedtuple(dict_from_nt)
+
+        @test isa(node, Model.Node)
+        @test isa(nt_from_node, NamedTuple)
+        @test isa(dict_from_node, Dict)
+        @test isa(dict_from_nt, Dict)
+        @test isa(node_from_nt, Model.Node)
+        @test isa(node_from_dict, Model.Node)
+        @test isa(nt_from_dict, NamedTuple)
+
+        @test Model.equal(node, node_from_nt) && Model.equal(node, node_from_dict)
+        @test nt_from_node == nt_from_dict
+        @test dict_from_node == dict_from_nt
+
+        @test Model.equal(node, Serialization.json_import(Serialization.json_export(node); return_type=Model.Node))
+        @test nt_from_node == Serialization.json_import(Serialization.json_export(nt_from_node); return_type=NamedTuple)
+        @test dict_from_node == Serialization.json_import(Serialization.json_export(dict_from_node); return_type=Dict)
     end
 end

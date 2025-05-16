@@ -12,6 +12,13 @@ Leaf(
     callback_exit::Vector{<:Function}  = Function[]
 ) where T = Leaf{T}(value, parent, callback_enter, callback_exit)
 
+function equal(a::Leaf, b::Leaf)
+    return a.value == b.value &&
+           typeof(a.parent) == typeof(b.parent) &&
+           a.callback_enter == b.callback_enter &&
+           a.callback_exit  == b.callback_exit
+end
+
 AbstractTrees.nodevalue(leaf::Leaf) = (
     value          = leaf.value,
     callback_enter = leaf.callback_enter,

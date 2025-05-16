@@ -1,6 +1,6 @@
 module Model
 
-export Node, Leaf, Group
+export Node, Leaf, Group, equal
 
 using AbstractTrees
 
