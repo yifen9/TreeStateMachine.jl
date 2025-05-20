@@ -1,6 +1,6 @@
 module Serialization
 
-export to_namedtuple, to_dict, json_export, json_import
+export to_namedtuple, to_dict, json_export, json_import, dot_export
 
 using AbstractTrees
 using JSON3
@@ -151,7 +151,7 @@ function json_import(source::AbstractString; return_type::Type=Dict{String,Any})
     end
 end
 
-function to_dot(root::Model.Node; path::Union{AbstractString, Nothing}=nothing, shape::String="circle", fontsize::Int=8, arrowhead::String="none")
+function dot_export(root::Model.Node; path::Union{AbstractString, Nothing}=nothing, shape::String="circle", fontsize::Int=8, arrowhead::String="none")
     result = String[]
     push!(result, "digraph Tree {")
     push!(result, "  node [shape=$shape, fontsize=$fontsize];")

@@ -197,7 +197,7 @@ using JSON3
 
     @testset ".dot" begin
         node = Builder.build([1, [2, 3], 4])
-        @test Serialization.to_dot(node) ==
+        @test Serialization.dot_export(node) ==
 """digraph Tree {
   node [shape=circle, fontsize=8];
   edge [arrowhead=none];
@@ -213,7 +213,7 @@ using JSON3
   N6 [label="3"];
   N4 [label="4"];
 }"""
-        # Serialization.to_dot(node; path="test.dot")
+        # Serialization.dot_export(node; path="test.dot")
         # run(`dot -Tsvg test.dot -o tree.svg`)
     end
 
