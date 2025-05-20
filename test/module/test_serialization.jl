@@ -195,6 +195,28 @@ using JSON3
         end
     end
 
+    @testset ".dot" begin
+        node = Builder.build([1, [2, 3], 4])
+        @test Serialization.to_dot(node) ==
+"""digraph Tree {
+  node [shape=circle, fontsize=8];
+  edge [arrowhead=none];
+  N1 [label="Group"];
+  N1 -> N2;
+  N1 -> N3;
+  N1 -> N4;
+  N2 [label="1"];
+  N3 [label="Group"];
+  N3 -> N5;
+  N3 -> N6;
+  N5 [label="2"];
+  N6 [label="3"];
+  N4 [label="4"];
+}"""
+        # Serialization.to_dot(node; path="test.dot")
+        # run(`dot -Tsvg test.dot -o tree.svg`)
+    end
+
     @testset "Complex" begin
         node = Builder.build([1, [2, 3], 4])
 

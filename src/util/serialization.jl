@@ -7,6 +7,7 @@ using JSON3
 
 using ..Model
 using ..Builder
+using ..Operation
 
 function _dict_normalize!(dict::Dict{String, Any}, map::Dict{String, <:Function})
     for (key, value) in dict
@@ -147,6 +148,47 @@ function json_import(source::AbstractString; return_type::Type=Dict{String,Any})
         return Builder.build(to_namedtuple(dict))
     else
         error("return_type: \"$return_type\" not supported")
+    end
+end
+
+function to_dot(root::Model.Node; path::Union{AbstractString, Nothing}=nothing, shape::String="circle", fontsize::Int=8, arrowhead::String="none")
+    result = String[]
+    push!(result, "digraph Tree {")
+    push!(result, "  node [shape=$shape, fontsize=$fontsize];")
+    push!(result, "  edge [arrowhead=$arrowhead];")
+
+    let counter = Ref(0), ids = Dict{Model.Node, String}()
+        getid = node -> begin
+            if !haskey(ids, node)
+                counter[] += 1
+                ids[node] = "N$(counter[])"
+            end
+            ids[node]
+        end
+
+        for node in Operation.get_function(:dfs)(root)
+            id = getid(node)
+            label = isa(node, Model.Leaf) ? string(node.value) : "Group"
+            push!(result, "  $id [label=\"$(label)\"];")
+
+            if node isa Model.Group
+                for child in node.child_list
+                    cid = getid(child)
+                    push!(result, "  $id -> $cid;")
+                end
+            end
+        end
+    end
+
+    push!(result, "}")
+
+    if path === nothing
+        return join(result, "\n")
+    else
+        open(path, "w") do io
+            write(io, join(result, "\n"))
+        end
+        return nothing
     end
 end
 
