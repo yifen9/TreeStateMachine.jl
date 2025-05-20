@@ -22,8 +22,10 @@ function _dict_normalize!(dict::Dict{String, Any}, map::Dict{String, <:Function}
     return dict
 end
 
-function to_namedtuple(data::Union{Model.Node, Dict{String, Any}})
-    if isa(data, Model.Node)
+function to_namedtuple(data::Union{AbstractVector, Model.Node, Dict{String, Any}})
+    if isa(data, AbstractVector)
+        return [ to_namedtuple(item) for item in data ]
+    elseif isa(data, Model.Node)
         if isa(data, Model.Leaf)
             return (
                 value          = data.value,
@@ -73,8 +75,10 @@ function to_namedtuple(data::Union{Model.Node, Dict{String, Any}})
     end
 end
 
-function to_dict(data::Union{Model.Node, NamedTuple})
-    if isa(data, Model.Node)
+function to_dict(data::Union{AbstractVector, Model.Node, NamedTuple})
+    if isa(data, AbstractVector)
+        return [ to_dict(item) for item in data ]
+    elseif isa(data, Model.Node)
         return to_dict(to_namedtuple(data))
     else
         key_leaf  = (:value, :parent, :callback_enter, :callback_exit)

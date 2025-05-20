@@ -9,8 +9,8 @@ end
 
 Group(
     child_list::Vector;
-    parent::Union{WeakRef, Nothing}    = nothing,
     child_index_current::Int           = 1,
+    parent::Union{WeakRef, Nothing}    = nothing,
     mode::Symbol                       = :sequential,
     callback_enter::Vector{<:Function} = Function[],
     callback_exit::Vector{<:Function}  = Function[]

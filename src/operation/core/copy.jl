@@ -1,0 +1,1 @@
+set!(:copy, x -> Copyer.copy(x))
