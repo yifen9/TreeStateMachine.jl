@@ -1,10 +1,33 @@
-function flatten(root::Model.Node)
-    all = dfs(root)
+function flatten(
+    root::Union{Model.Node, Vector{Model.Node}, AbstractVector};
+    search::Symbol = :dfs,
+    order::Symbol  = :pre
+)::AbstractVector
     result = Any[]
-    for item in all
-        isa(item, Model.Leaf) && push!(result, item.value)
+    if isa(root, Model.Node) || isa(root, Vector{Model.Node})
+        node_list = if isa(root, Model.Node)
+            if search in (:dfs, :bfs)
+                if search === :dfs
+                    dfs(root; order)
+                else
+                    bfs(root)
+                end
+            else
+                error("Search `$(search)` not found in (:dfs, :bfs)")
+            end
+        else
+            root
+        end
+        for node in node_list
+            isa(node, Model.Leaf) && push!(result, node.value)
+        end
+        return result
+    else
+        for root_item in root
+            append!(result, flatten(root_item; search, order))
+        end
+        return result
     end
-    return result
 end
 
 set!(:flatten, flatten)

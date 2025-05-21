@@ -3,7 +3,7 @@ using TreeStateMachine
 
 using JSON3
 
-@testset "Serialization module" begin
+@testset "Serialization" begin
 
     @testset "Node <-> NamedTuple <-> Dict <-> JSON" begin
         node = Builder.build([1, [2, 3], 4])

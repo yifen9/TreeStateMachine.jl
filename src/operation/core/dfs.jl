@@ -1,15 +1,22 @@
-function _dfs!(node::Model.Node, acc::Vector{Model.Node}, order::Symbol)
-    (order == :pre)  && push!(acc, node)
-    if isa(node, Model.Group)
-        for child in node.child_list
-            _dfs!(child, acc, order)
+function _dfs!(
+    root::Model.Node,
+    result::Vector{Model.Node},
+    order::Symbol
+)::Nothing
+    (order == :pre)  && push!(result, root)
+    if isa(root, Model.Group)
+        for child in root.child_list
+            _dfs!(child, result, order)
         end
     end
-    (order == :post) && push!(acc, node)
+    (order == :post) && push!(result, root)
     return nothing
 end
 
-function dfs(root::Model.Node; order::Symbol=:pre)
+function dfs(
+    root::Model.Node;
+    order::Symbol = :pre
+)::Vector{Model.Node}
     if order in (:pre, :post)
         result = Model.Node[]
         _dfs!(root, result, order)

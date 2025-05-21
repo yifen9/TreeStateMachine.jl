@@ -4,7 +4,7 @@ export copy
 
 using ..Model
 
-function copy(leaf::Model.Leaf)
+function copy(leaf::Model.Leaf)::Model.Leaf
     value_new = deepcopy(leaf.value)
     return Model.Leaf(
         value_new;
@@ -14,7 +14,7 @@ function copy(leaf::Model.Leaf)
     )
 end
 
-function copy(group::Model.Group)
+function copy(group::Model.Group)::Model.Group
     group_new = Model.Group(
         Vector{Model.Node}();
         child_index_current = group.child_index_current,

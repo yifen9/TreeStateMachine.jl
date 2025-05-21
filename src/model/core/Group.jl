@@ -14,9 +14,16 @@ Group(
     mode::Symbol                       = :sequential,
     callback_enter::Vector{<:Function} = Function[],
     callback_exit::Vector{<:Function}  = Function[]
-) = Group(Vector{Node}(child_list), child_index_current, parent, mode, Vector{Function}(callback_enter), Vector{Function}(callback_exit))
+)::Group = Group(
+    Vector{Node}(child_list),
+    child_index_current,
+    parent,
+    mode,
+    Vector{Function}(callback_enter),
+    Vector{Function}(callback_exit)
+)
 
-function equal(group_a::Group, group_b::Group)
+function equal(group_a::Group, group_b::Group)::Bool
     group_a.child_index_current === group_b.child_index_current ||
         return false
     typeof(group_a.parent)      === typeof(group_b.parent) ||
@@ -29,15 +36,17 @@ function equal(group_a::Group, group_b::Group)
         return false
     length(group_a.child_list)  === length(group_b.child_list) ||
         return false
-    for (group_a_child, group_b_child) in zip(group_a.child_list, group_b.child_list)
+    group_zip = zip(group_a.child_list, group_b.child_list)
+    for (group_a_child, group_b_child) in group_zip
         equal(group_a_child, group_b_child) || return false
     end
     return true
 end
 
-function equal(group_a::Vector{<:Group}, group_b::Vector{<:Group})
+function equal(group_a::Vector{<:Group}, group_b::Vector{<:Group})::Bool
     if length(group_a) === length(group_b)
-        for (group_a_item, group_b_item) in zip(group_a, group_b)
+        group_zip = zip(group_a, group_b)
+        for (group_a_item, group_b_item) in group_zip
             !equal(group_a_item, group_b_item) && return false
         end
         return true

@@ -5,9 +5,9 @@ export build
 using ..Model
 using ..Copyer
 
-build(data::Model.Leaf) = Copyer.copy(data)
+build(data::Model.Leaf)::Model.Leaf = Copyer.copy(data)
 
-function build(data::Model.Group)
+function build(data::Model.Group)::Model.Group
     data_new = Copyer.copy(data)
     data_new_child_list = data_new.child_list
     if isempty(data_new_child_list)
@@ -20,7 +20,7 @@ function build(data::Model.Group)
     end
 end
 
-function build(data::NamedTuple)
+function build(data::NamedTuple)::Model.Node
     callback_enter = get(data, :callback_enter, Function[])
     callback_exit  = get(data, :callback_exit,  Function[])
 
@@ -57,8 +57,8 @@ function build(data::NamedTuple)
     end
 end
 
-build(data::AbstractVector) = build((child_list = data,))
+build(data::AbstractVector)::Model.Group = build((child_list = data,))
 
-build(data::Any) = build((value = data,))
+build(data::Any)::Model.Leaf = build((value = data,))
 
 end

@@ -1,4 +1,4 @@
-function bfs(root::Model.Node)
+function bfs(root::Model.Node)::Vector{Model.Node}
     queue = Model.Node[root]
     result = Model.Node[]
     while !isempty(queue)
