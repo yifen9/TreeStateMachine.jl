@@ -5,11 +5,7 @@ function path(
     search::Symbol             = :dfs,
     order::Symbol              = :pre
 )::Vector{Vector{Model.Node}}
-    node_list = if isa(root, Model.Node)
-        find(root; predicate, limit, search, order)
-    else
-        root
-    end
+    node_list = find(root; predicate, limit, search, order)
     path_list = Vector{Vector{Model.Node}}()
     for (index, node) in enumerate(node_list)
         limit !== nothing && index > limit && break

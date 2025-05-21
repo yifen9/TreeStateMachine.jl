@@ -261,6 +261,6 @@ using TreeStateMachine
         @test Operation.get_function(:depth)(root)                                            == [1]
         @test Operation.get_function(:depth)(root; target = root.child_list[2])               == [2]
         @test Operation.get_function(:depth)(root; target = root.child_list[2].child_list[2]) == [3]
-        @show Operation.get_function(:depth)(root; target = root.child_list[3])               == [3, 2]
+        @test Operation.get_function(:depth)(root; target = root.child_list[3])               == [3, 2]
     end
 end
