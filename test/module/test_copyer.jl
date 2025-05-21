@@ -1,70 +1,34 @@
 using Test
 using TreeStateMachine
 
-@testset "Copyer module" begin
+@testset "Copyer" begin
 
     @testset "Leaf" begin
-        called = false
-        f(x) = (called = true)
+        f1 = (x -> x)
+        f2 = (x -> x * 2)
 
-        orig = Model.Leaf(
-            123;
-            parent         = nothing,
-            callback_enter = [f],
-            callback_exit  = [f]
-        )
+        leaf_origin = Model.Leaf(123; callback_enter=[f1], callback_exit=[f1, f2])
+        leaf_copy   = Copyer.copy(leaf_origin)
 
-        dup = Copyer.copy(orig)
-
-        @test isa(dup, Model.Leaf{Int})
-        @test dup !== orig
-        @test dup.value == orig.value
-
-        @test dup.parent === nothing
-
-        @test length(dup.callback_enter) == length(orig.callback_enter)
-        @test dup.callback_enter[1] === orig.callback_enter[1]
-        @test dup.callback_enter !== orig.callback_enter
-
-        @test length(dup.callback_exit) == length(orig.callback_exit)
-        @test dup.callback_exit[1] === orig.callback_exit[1]
-        @test dup.callback_exit !== orig.callback_exit
+        @test Model.equal(leaf_origin, leaf_copy)
     end
 
     @testset "Group" begin
-        f_enter(x) = nothing
-        f_exit(x)  = nothing
+        leaf = Model.Leaf(123)
+        f1   = (x -> x)
+        f2   = (x -> x * 2)
 
-        leaf1 = Model.Leaf(1)
-        leaf2 = Model.Leaf(2)
-        grp_orig = Model.Group(
-            [leaf1, leaf2];
-            parent         = nothing,
-            mode           = :parallel,
-            callback_enter = [f_enter],
-            callback_exit  = [f_exit]
-        )
-        grp_orig.child_index_current = 2
+        group_origin = Model.Group([leaf, leaf]; callback_enter=[f1], callback_exit=[f1, f2])
+        group_copy   = Copyer.copy(group_origin)
 
-        dup_grp = Copyer.copy(grp_orig)
-
-        @test isa(dup_grp, Model.Group)
-        @test dup_grp !== grp_orig
-
-        @test dup_grp.mode == grp_orig.mode
-        @test dup_grp.callback_enter == grp_orig.callback_enter
-        @test dup_grp.callback_exit  == grp_orig.callback_exit
-        @test dup_grp.callback_enter !== grp_orig.callback_enter
-        @test dup_grp.callback_exit  !== grp_orig.callback_exit
-
-        @test dup_grp.child_index_current == grp_orig.child_index_current
-
-        @test length(dup_grp.child_list) == 2
-        @test all(isa(c, Model.Leaf) for c in dup_grp.child_list)
-        @test [c.value for c in dup_grp.child_list] == [1, 2]
-        @test all(dup_grp.child_list[i] !== grp_orig.child_list[i] for i in 1:2)
-
-        @test all(child.parent === nothing for child in dup_grp.child_list)
+        @test Model.equal(group_origin, group_copy)
     end
 
+    @testset "Mixed" begin
+        leaf            = Model.Leaf(123)
+        group_g         = Model.Group([leaf])
+        group_lg_origin = Model.Group([leaf, group_g])
+        group_lg_copy   = Copyer.copy(group_lg_origin)
+        @test Model.equal(group_lg_origin, group_lg_copy)
+    end
 end

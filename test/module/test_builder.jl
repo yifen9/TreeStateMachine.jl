@@ -1,137 +1,164 @@
 using Test
 using TreeStateMachine
 
-@testset "Builder module" begin
+@testset "Builder" begin
 
-    @testset "Scalar → Leaf" begin
-        leaf = Builder.build(123)
-
-        @test isa(leaf, Model.Leaf{Int})
+    @testset "Node" begin
         
-        @test leaf.value == 123
-        @test leaf.parent === nothing
-        @test leaf.callback_enter == Function[]
-        @test leaf.callback_exit  == Function[]
-    end
-    
-    @testset "Vector → Group" begin
-        group = Builder.build(["a","b","c"])
+        @testset "Leaf" begin
+            leaf_c = Model.Leaf(123)
+            leaf   = Builder.build(leaf_c)
+            @test Model.equal(leaf, leaf_c)
+        end
 
-        @test isa(group, Model.Group)
+        @testset "Group" begin
+            group_c                      = Model.Group([Model.Leaf(123)])
+            group                        = Builder.build(group_c)
+            group_c.child_list[1].parent = WeakRef(group_c)
+            @test Model.equal(group, group_c)
+        end
 
-        @test length(group.child_list) == 3
-        @test all(child.value in ["a","b","c"] for child in group.child_list)
-        @test all(isa(child.parent, WeakRef)   for child in group.child_list)
+        @testset "Mixed" begin
+            leaf_c     = Model.Leaf(123)
+            group_l_c  = Model.Group([leaf_c])
+            group_lg_c = Model.Group([leaf_c, group_l_c])
 
-        @test group.mode == :sequential
-    end
+            group_lg_c.child_list[1].parent = WeakRef(group_lg_c)
+            group_lg_c.child_list[2].parent = WeakRef(group_lg_c)
 
-    @testset "Nested Vector → Nested Groups" begin
-        data = [1, [2,3], 4]
+            group_lg_c.child_list[2].child_list[1].parent = WeakRef(group_lg_c.child_list[2])
 
-        root = Builder.build(data)
+            group_lg = Builder.build(group_lg_c)
 
-        group_2 = root.child_list[2]
+            @test Model.equal(group_lg, group_lg_c)
+        end
 
-        @test isa(root, Model.Group)
-
-        @test isa(group_2, Model.Group)
-        @test [leaf.value for leaf in group_2.child_list] == [2,3]
-        @test isa(group_2.parent, WeakRef)
-
-        for leaf in group_2.child_list
-            @test isa(leaf.parent, WeakRef)
-            @test leaf.parent.value === group_2
+        @testset "Error" begin
+            group = Model.Group([Model.Leaf(123)])
+            group.child_list = Vector{Model.Node}([])
+            @test_throws ErrorException Builder.build(group)
         end
     end
 
-    @testset "parent_reference = false" begin
-        group = Builder.build([1,2,3]; parent_reference=false)
+    @testset "NamedTuple" begin
 
-        @test isa(group, Model.Group)
+        @testset "Leaf" begin
 
-        @test all(child.parent === nothing for child in group.child_list)
+            @testset "Default" begin
+                leaf = Builder.build((value = 123,))
+
+                @test isa(leaf, Model.Leaf)
+
+                @test leaf.value          === 123
+                @test leaf.parent         === nothing
+                @test leaf.callback_enter ==  Function[]
+                @test leaf.callback_exit  ==  Function[]
+            end
+
+            @testset "Custom" begin
+                f1 = (x -> x)
+                f2 = (x -> x * 2)
+
+                leaf_1 = Builder.build((value = 123, callback_enter = [f1]))
+                leaf_2 = Builder.build((value = 123, callback_exit  = [f1, f2]))
+                leaf_3 = Builder.build((value = 123, callback_enter = [f1], callback_exit = [f1, f2]))
+
+                @test leaf_1.callback_enter == Function[f1]
+                @test leaf_1.callback_exit  == Function[]
+                
+                @test leaf_2.callback_enter == Function[]
+                @test leaf_2.callback_exit  == Function[f1, f2]
+
+                @test leaf_3.callback_enter == Function[f1]
+                @test leaf_3.callback_exit  == Function[f1, f2]
+            end
+        end
+
+        @testset "Group" begin
+            
+            @testset "Default" begin
+                leaf_1 = (value = 123,)
+                leaf_2 = (value = "abc",)
+
+                group_1 = Builder.build((child_list = [leaf_1, leaf_2],))
+                group_2 = Vector{Model.Node}([Builder.build(leaf_1), Builder.build(leaf_2)])
+
+                group_2[1].parent = WeakRef(nothing)
+                group_2[2].parent = WeakRef(nothing)
+
+                group_3 = Builder.build((child_list = [leaf_1, group_1],))
+                group_4 = Vector{Model.Node}([Builder.build(leaf_1), group_1])
+
+                group_4[1].parent = WeakRef(nothing)
+                group_4[2].parent = WeakRef(nothing)
+
+                @test isa(group_1, Model.Group)
+
+                @test Model.equal(group_1.child_list, group_2)
+                @test Model.equal(group_3.child_list, group_4)
+            end
+
+            @testset "Custom" begin
+                leaf = (value = 123,)
+
+                f1 = (x -> x)
+                f2 = (x -> x * 2)
+
+                group_1 = Builder.build((child_list=[leaf], callback_enter = [f1]))
+                group_2 = Builder.build((child_list=[leaf], callback_exit  = [f1, f2]))
+
+                group_1_c = Model.Group([Model.Leaf(123)]; callback_enter = [f1])
+                group_2_c = Model.Group([Model.Leaf(123)]; callback_exit  = [f1, f2])
+
+                group_1_c.child_list[1].parent = WeakRef(group_1_c)
+                group_2_c.child_list[1].parent = WeakRef(group_2_c)
+
+                @test Model.equal(group_1, group_1_c)
+                @test Model.equal(group_2, group_2_c)
+            end
+        end
+
+        @testset "Mixed" begin
+            leaf     = (value = 123,)
+            group_l  = (child_list = [leaf],)
+            group_lg = Builder.build((child_list = [leaf, group_l],))
+
+            leaf_c                          = Model.Leaf(123)
+            group_l_c                       = Model.Group([leaf_c])
+            group_l_c.child_list[1].parent  = WeakRef(group_l_c)
+            group_lg_c                      = Model.Group([leaf_c, group_l_c])
+            group_lg_c.child_list[1].parent = WeakRef(group_lg_c)
+            group_lg_c.child_list[2].parent = WeakRef(group_lg_c)
+
+            @test Model.equal(group_lg, group_lg_c)
+        end
+
+        @testset "Error" begin
+            @test_throws ErrorException Builder.build((child_list=[],))
+            @test_throws ErrorException Builder.build((;))
+        end
     end
 
-    @testset "NamedTuple custom Leaf" begin
-        enter_called = false
-        exit_called  = false
+    @testset "Any / AbstractVector" begin
 
-        f1(x) = (enter_called = true)
-        f2(x) = (exit_called  = true)
+        @testset "Leaf" begin
+            leaf   = Builder.build(123)
+            leaf_c = Model.Leaf(123)
+            @test Model.equal(leaf, leaf_c)
+        end
 
-        data = (
-            value          = "x",
-            parent         = nothing,
-            callback_enter = [f1],
-            callback_exit  = [f2]
-        )
+        @testset "Group" begin
+            group   = Builder.build([1, [2, 3], 4])
+            group_c = Model.Group([Model.Leaf(1), Model.Group([Model.Leaf(2), Model.Leaf(3)]), Model.Leaf(4)])
 
-        leaf = Builder.build(data)
+            group_c.child_list[1].parent = WeakRef(group_c)
+            group_c.child_list[2].parent = WeakRef(group_c)
+            group_c.child_list[3].parent = WeakRef(group_c)
 
-        @test isa(leaf, Model.Leaf{String})
+            group_c.child_list[2].child_list[1].parent = WeakRef(group_c.child_list[2])
+            group_c.child_list[2].child_list[2].parent = WeakRef(group_c.child_list[2])
 
-        @test leaf.value == "x"
-        @test leaf.parent === nothing
-        @test length(leaf.callback_enter) == 1
-        @test leaf.callback_enter[1] === f1
-        @test length(leaf.callback_exit) == 1
-        @test leaf.callback_exit[1] === f2
-    end
-
-    @testset "NamedTuple custom Group" begin
-        g_enter = false
-        g_exit  = false
-        f_enter(x) = (g_enter = true)
-        f_exit(x)  = (g_exit  = true)
-
-        data = (
-            child_list     = [10, 20],
-            parent         = nothing,
-            mode           = :parallel,
-            callback_enter = [f_enter],
-            callback_exit  = [f_exit],
-        )
-
-        group = Builder.build(data)
-
-        @test isa(group, Model.Group)
-
-        @test [child.value for child in group.child_list] == [10,20]
-        @test all(child.parent == group for child in group.child_list)
-
-        @test group.parent === nothing
-        @test group.mode == :parallel
-        @test group.callback_enter == [f_enter]
-        @test group.callback_exit  == [f_exit]
-    end
-
-    @testset "Mixed nested NamedTuple & Vector" begin
-        data = (
-            child_list = [
-                1,
-                (
-                    child_list = [2,3],
-                    mode       = :parallel
-                ),
-                4
-            ],
-            mode = :sequential
-        )
-
-        root = Builder.build(data)
-
-        @test isa(root, Model.Group)
-        @test root.mode == :sequential
-
-        @test isa(root.child_list[2], Model.Group)
-        @test root.child_list[2].mode == :parallel
-
-        @test [leaf.value for leaf in root.child_list[2].child_list] == [2,3]
-    end
-
-    @testset "Error cases" begin
-        @test_throws ErrorException Builder.build([],)
-        @test_throws ErrorException Builder.build((;),)
+            @test Model.equal(group, group_c)
+        end
     end
 end

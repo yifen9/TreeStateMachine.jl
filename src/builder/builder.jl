@@ -3,10 +3,24 @@ module Builder
 export build
 
 using ..Model
+using ..Copyer
 
-build(data::Model.Node; parent_reference::Bool=true) = data
+build(data::Model.Leaf) = Copyer.copy(data)
 
-function build(data::NamedTuple; parent_reference::Bool=true)
+function build(data::Model.Group)
+    data_new = Copyer.copy(data)
+    data_new_child_list = data_new.child_list
+    if isempty(data_new_child_list)
+        error("Build empty Group")
+    else
+        for data_new_child in data_new_child_list
+            data_new_child.parent = WeakRef(data_new)
+        end
+        return data_new
+    end
+end
+
+function build(data::NamedTuple)
     callback_enter = get(data, :callback_enter, Function[])
     callback_exit  = get(data, :callback_exit,  Function[])
 
@@ -18,14 +32,13 @@ function build(data::NamedTuple; parent_reference::Bool=true)
             mode = get(data, :mode, :sequential)
             group = Model.Group(
                 Vector{Model.Node}();
-                parent = nothing,
                 mode,
                 callback_enter,
                 callback_exit
             )
             for data_child in data_child_list
-                child = build(data_child; parent_reference)
-                parent_reference && (child.parent = WeakRef(group))
+                child = build(data_child)
+                child.parent = WeakRef(group)
                 push!(group.child_list, child)
             end
             return group
@@ -33,14 +46,8 @@ function build(data::NamedTuple; parent_reference::Bool=true)
     else
         if haskey(data, :value) && data.value !== nothing
             value = data.value
-            if isa(value, AbstractVector)
-                isempty(value) && error("Build empty Leaf")
-            else
-                (value === nothing) && error("Build empty Leaf")
-            end
             return Model.Leaf(
                 value;
-                parent = nothing,
                 callback_enter,
                 callback_exit
             )
@@ -50,8 +57,8 @@ function build(data::NamedTuple; parent_reference::Bool=true)
     end
 end
 
-build(data::AbstractVector; parent_reference::Bool=true) = build((child_list = data,); parent_reference)
+build(data::AbstractVector) = build((child_list = data,))
 
-build(data::Any; parent_reference::Bool=true) = build((value = data,); parent_reference)
+build(data::Any) = build((value = data,))
 
 end

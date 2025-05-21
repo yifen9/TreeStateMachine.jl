@@ -13,15 +13,16 @@ function filter(node::Union{Vector{Model.Node}, Model.Node}; predicate::Function
             if isempty(kept) && !predicate(node)
                 return nothing
             else
-                group_new = Model.Group(kept;
+                group_new = Model.Group(
+                    kept;
                     parent         = nothing,
                     mode           = node.mode,
                     callback_enter = node.callback_enter,
                     callback_exit  = node.callback_exit
                 )
                 group_new.child_index_current = node.child_index_current
-                for child in group_new.child_list
-                    isa(child.parent, WeakRef) && (child_new.parent = WeakRef(group_new))
+                for child_new in group_new.child_list
+                    child_new.parent = WeakRef(group_new)
                 end
                 return group_new
             end

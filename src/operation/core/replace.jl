@@ -14,7 +14,7 @@ function replace(root::Model.Node; predicate::Function=( _ -> false ), fn::Funct
                     continue
                 else
                     push!(child_list_new, child_new)
-                    isa(child_new.parent, WeakRef) && (child_new.parent = WeakRef(group_new))
+                    child_new.parent = WeakRef(group_new)
                 end
             end
             group_new.child_list = child_list_new

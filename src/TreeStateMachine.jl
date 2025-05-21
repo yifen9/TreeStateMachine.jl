@@ -4,9 +4,9 @@ export Model, Builder, Copyer, Operation, Serialization
 
 include(joinpath("model", "model.jl"))
 
-include(joinpath("builder", "builder.jl"))
+include(joinpath("copyer", "copyer.jl"))
 
-include(joinpath("util", "copyer.jl"))
+include(joinpath("builder", "builder.jl"))
 
 include(joinpath("operation", "operation.jl"))
 

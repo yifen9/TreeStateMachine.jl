@@ -3,52 +3,45 @@ mutable struct Group <: Node
     child_index_current::Int
     parent::Union{WeakRef, Nothing}
     mode::Symbol
-    callback_enter::Vector{<:Function}
-    callback_exit::Vector{<:Function}
+    callback_enter::Vector{Function}
+    callback_exit::Vector{Function}
 end
 
 Group(
-    child_list::Vector;
+    child_list::Vector{<:Node};
     child_index_current::Int           = 1,
     parent::Union{WeakRef, Nothing}    = nothing,
     mode::Symbol                       = :sequential,
     callback_enter::Vector{<:Function} = Function[],
     callback_exit::Vector{<:Function}  = Function[]
-) = Group(Vector{Node}(child_list), child_index_current, parent, mode, callback_enter, callback_exit)
+) = Group(Vector{Node}(child_list), child_index_current, parent, mode, Vector{Function}(callback_enter), Vector{Function}(callback_exit))
 
-function equal(a::Group, b::Group)
-    a.child_index_current == b.child_index_current ||
+function equal(group_a::Group, group_b::Group)
+    group_a.child_index_current === group_b.child_index_current ||
         return false
-    typeof(a.parent) == typeof(b.parent) ||
+    typeof(group_a.parent)      === typeof(group_b.parent) ||
         return false
-    a.mode == b.mode ||
+    group_a.mode                === group_b.mode ||
         return false
-    a.callback_enter == b.callback_enter ||
+    group_a.callback_enter      ==  group_b.callback_enter ||
         return false
-    a.callback_exit  == b.callback_exit  ||
+    group_a.callback_exit       ==  group_b.callback_exit  ||
         return false
-    length(a.child_list) == length(b.child_list) ||
+    length(group_a.child_list)  === length(group_b.child_list) ||
         return false
-    for (ca, cb) in zip(a.child_list, b.child_list)
-        equal(ca, cb) || return false
+    for (group_a_child, group_b_child) in zip(group_a.child_list, group_b.child_list)
+        equal(group_a_child, group_b_child) || return false
     end
     return true
 end
 
-AbstractTrees.nodevalue(group::Group) = (
-    child_list          = group.child_list,
-    child_index_current = group.child_index_current,
-    mode                = group.mode,
-    callback_enter      = group.callback_enter,
-    callback_exit       = group.callback_exit
-)
-
-AbstractTrees.children(group::Group) = group.child_list
-
-AbstractTrees.childtype(::Type{Group}) = Node
-
-AbstractTrees.parent(group::Group) = group.parent === nothing ? nothing : group.parent.value
-
-AbstractTrees.ParentLinks(::Type{Group}) = StoredParents()
-
-AbstractTrees.ChildIndexing(::Type{Group}) = AbstractTrees.IndexedChildren()
+function equal(group_a::Vector{<:Group}, group_b::Vector{<:Group})
+    if length(group_a) === length(group_b)
+        for (group_a_item, group_b_item) in zip(group_a, group_b)
+            !equal(group_a_item, group_b_item) && return false
+        end
+        return true
+    else
+        return false
+    end
+end

@@ -1,197 +1,220 @@
 using Test
 using TreeStateMachine
 
-using AbstractTrees
+@testset "Model" begin
 
-@testset "Model module" begin
+    @testset "Constructor" begin
 
-    @testset "Leaf" begin
+        @testset "Leaf" begin
 
-        @testset "Default" begin
-            leaf = Model.Leaf(123)
+            @testset "Default" begin
+                leaf = Model.Leaf(123)
 
-            @test isa(leaf, Model.Leaf{Int})
+                @test isa(leaf, Model.Leaf{Int})
 
-            @test leaf.value == 123
-            @test leaf.parent === nothing
-            @test leaf.callback_enter == Function[]
-            @test leaf.callback_exit  == Function[]
+                @test leaf.value          === 123
+                @test leaf.parent         === nothing
+                @test leaf.callback_enter ==  Function[]
+                @test leaf.callback_exit  ==  Function[]
+            end
+
+            @testset "Custom" begin
+                parent = WeakRef(Model.Leaf(123))
+
+                f1 = (x -> x)
+                f2 = (x -> x * 2)
+
+                leaf = Model.Leaf(
+                    "abc";
+                    parent,
+                    callback_enter = [f1],
+                    callback_exit  = [f1, f2]
+                )
+
+                @test leaf.value          === "abc"
+                @test leaf.parent         === parent
+                @test leaf.callback_enter ==  [f1]
+                @test leaf.callback_exit  ==  [f1, f2]
+            end
+
+            @testset "Error" begin
+                @test_throws MethodError Model.Leaf()
+            end
         end
 
-        @testset "Custom" begin
-            dummy = Model.Leaf("x")
+        @testset "Group" begin
+            
+            @testset "Default" begin
+                leaf_1 = Model.Leaf("a")
+                leaf_2 = Model.Leaf("b")
 
-            wr = WeakRef(dummy)
+                group = Model.Group([leaf_1, leaf_2])
 
-            f_enter(x) = global g_enter = true
-            f_exit(x)  = global g_exit  = true
+                @test isa(group, Model.Group)
 
-            leaf = Model.Leaf(
-                "hi";
-                parent         = wr,
-                callback_enter = [f_enter],
-                callback_exit  = [f_exit]
-            )
+                @test group.child_list          ==  [leaf_1, leaf_2]
+                @test group.child_index_current === 1
+                @test group.parent              === nothing
+                @test group.mode                === :sequential
+                @test group.callback_enter      ==  Function[]
+                @test group.callback_exit       ==  Function[]
+            end
 
-            @test leaf.value == "hi"
+            @testset "Custom" begin
+                leaf_1 = Model.Leaf("a")
+                leaf_2 = Model.Leaf("b")
 
-            @test isa(leaf.parent, WeakRef)
-            @test leaf.parent.value === dummy
+                parent = WeakRef(Model.Group([leaf_1]))
 
-            @test length(leaf.callback_enter) == 1
-            @test leaf.callback_enter[1] === f_enter
-            @test length(leaf.callback_exit)  == 1
-            @test leaf.callback_exit[1]  === f_exit
+                f1 = (x -> x)
+                f2 = (x -> x * 2)
+
+                group = Model.Group(
+                    [leaf_2];
+                    parent,
+                    mode           = :parallel,
+                    callback_enter = [f1],
+                    callback_exit  = [f1, f2]
+                )
+
+                @test group.child_list          ==  [leaf_2]
+                @test group.child_index_current === 1
+                @test group.parent              === parent
+                @test group.mode                === :parallel
+                @test group.callback_enter      ==  [f1]
+                @test group.callback_exit       ==  [f1, f2]
+            end
+
+            @testset "Error" begin
+                @test_throws MethodError Model.Group()
+            end
+        end
+
+        @testset "Mixed" begin
+            leaf     = Model.Leaf(123)
+            group_l  = Model.Group([leaf])
+            group_lg = Model.Group([leaf, group_l])
+
+            @test isa(group_lg.child_list[1], Model.Leaf)
+            @test isa(group_lg.child_list[2], Model.Group)
+
+            @test group_lg.child_list          ==  [leaf, group_l]
+            @test group_lg.child_index_current === 1
+            @test group_lg.parent              === nothing
+            @test group_lg.mode                === :sequential
+            @test group_lg.callback_enter      ==  Function[]
+            @test group_lg.callback_exit       ==  Function[]
         end
     end
 
-    @testset "Group" begin
+    @testset "Equal" begin
         
-        @testset "Default" begin
-            leaf_a = Model.Leaf("a")
-            leaf_b = Model.Leaf("b")
+        @testset "Leaf" begin
+            
+            @testset "Single" begin
+                leaf_0 = Model.Leaf(0)
+                leaf_1 = Model.Leaf(123)
+                leaf_2 = Model.Leaf(123)
+                leaf_3 = Model.Leaf(123; parent         = WeakRef(leaf_0))
+                leaf_4 = Model.Leaf(123; callback_enter = [(x -> x)])
+                leaf_5 = Model.Leaf(123; callback_exit  = [(x -> x)])
 
-            group = Model.Group([leaf_a, leaf_b])
-
-            @test isa(group, Model.Group)
-
-            @test group.child_list == [leaf_a, leaf_b]
-            @test group.child_index_current == 1
-            @test group.parent === nothing
-            @test group.mode == :sequential
-            @test group.callback_enter == Function[]
-            @test group.callback_exit  == Function[]
-        end
-
-        @testset "Custom" begin
-            leaf_a = Model.Leaf("a")
-            leaf_b = Model.Leaf("b")
-
-            container = Model.Group([leaf_a])
-
-            wr = WeakRef(container)
-
-            f_enter(x) = global g_enter = true
-            f_exit(x)  = global g_exit = true
-
-            group = Model.Group(
-                [leaf_b];
-                parent         = wr,
-                mode           = :parallel,
-                callback_enter = [f_enter],
-                callback_exit  = [f_exit]
-            )
-
-            @test group.child_list == [leaf_b]
-            @test group.child_index_current == 1
-
-            @test isa(group.parent, WeakRef)
-
-            @test group.parent.value === container
-            @test group.mode == :parallel
-            @test group.callback_enter == [f_enter]
-            @test group.callback_exit  == [f_exit]
-        end
-    end
-
-    @testset "AbstractTrees" begin
-
-        @testset "nodevalue" begin
-            leaf  = Model.Leaf(1)
-            group = Model.Group([leaf])
-
-            @testset "Leaf" begin
-                nt = AbstractTrees.nodevalue(leaf)
-
-                @test isa(nt, NamedTuple)
-
-                @test haskey(nt, :value)
-                @test nt.value == 1
-
-                @test haskey(nt, :callback_enter)
-                @test nt.callback_enter == Function[]
-
-                @test haskey(nt, :callback_exit)
-                @test nt.callback_exit == Function[]
+                @test !Model.equal(leaf_0, leaf_1)
+                @test  Model.equal(leaf_1, leaf_2)
+                @test !Model.equal(leaf_1, leaf_3)
+                @test !Model.equal(leaf_1, leaf_4)
+                @test !Model.equal(leaf_1, leaf_5)
             end
 
-            @testset "Group" begin
-                nt = AbstractTrees.nodevalue(group)
+            @testset "Vector" begin
+                leaf_0 = Model.Leaf(0)
+                leaf_1 = Model.Leaf(123)
+                leaf_2 = Model.Leaf(123)
 
-                @test isa(nt, NamedTuple)
+                leaf_list_0  = [leaf_0]
+                leaf_list_1  = [leaf_1]
+                leaf_list_2  = [leaf_2]
 
-                @test haskey(nt, :child_list)
-                @test nt.child_list == group.child_list
+                leaf_list_01 = [leaf_0, leaf_1]
+                leaf_list_10 = [leaf_1, leaf_0]
+                leaf_list_11 = [leaf_1, leaf_1]
 
-                @test haskey(nt, :child_index_current)
-                @test nt.child_index_current == group.child_index_current
-
-                @test haskey(nt, :mode)
-                @test nt.mode == group.mode
-
-                @test haskey(nt, :callback_enter)
-                @test nt.callback_enter == Function[]
-
-                @test haskey(nt, :callback_exit)
-                @test nt.callback_exit == Function[]
+                @test !Model.equal(leaf_list_0,  leaf_list_1)
+                @test  Model.equal(leaf_list_1,  leaf_list_2)
+                @test !Model.equal(leaf_list_01, leaf_list_10)
+                @test !Model.equal(leaf_list_1,  leaf_list_11)
             end
         end
 
-        @testset "children / childtype" begin
-            leaf  = Model.Leaf(1)
-            group = Model.Group([leaf])
+        @testset "Group" begin
+            
+            @testset "Single" begin
+                leaf_0   = Model.Leaf(0)
+                leaf_1   = Model.Leaf(123)
+                leaf_2   = Model.Leaf(123)
 
-            @test AbstractTrees.children(leaf) == Any[]
-            @test AbstractTrees.children(group) === group.child_list
+                group_0  = Model.Group([leaf_0])
 
-            @test AbstractTrees.childtype(typeof(leaf)) == Any
-            @test AbstractTrees.childtype(typeof(group)) == Model.Node
+                group_00 = Model.Group([leaf_0, leaf_0])
+                group_11 = Model.Group([leaf_1, leaf_1])
+                group_22 = Model.Group([leaf_2, leaf_2])
+                group_01 = Model.Group([leaf_0, leaf_1])
+                group_10 = Model.Group([leaf_1, leaf_0])
+                group_33 = Model.Group([leaf_1, leaf_1]; parent         = WeakRef(group_0))
+                group_44 = Model.Group([leaf_1, leaf_1]; callback_enter = [(x -> x)])
+                group_55 = Model.Group([leaf_1, leaf_1]; callback_exit  = [(x -> x)])
+
+                @test !Model.equal(group_0,  group_00)
+                @test !Model.equal(group_00, group_11)
+                @test  Model.equal(group_11, group_22)
+                @test !Model.equal(group_01, group_10)
+                @test !Model.equal(group_11, group_33)
+                @test !Model.equal(group_11, group_44)
+                @test !Model.equal(group_11, group_55)
+            end
+
+            @testset "Vector" begin
+                group_0 = Model.Group([Model.Leaf(0)])
+                group_1 = Model.Group([Model.Leaf(123)])
+                group_2 = Model.Group([Model.Leaf(123)])
+
+                group_list_0  = [group_0]
+                group_list_1  = [group_1]
+                group_list_2  = [group_2]
+
+                group_list_00 = [group_0, group_0]
+                group_list_01 = [group_0, group_1]
+                group_list_10 = [group_1, group_0]
+
+                @test !Model.equal(group_list_0,  group_list_00)
+                @test !Model.equal(group_list_0,  group_list_1)
+                @test  Model.equal(group_list_1,  group_list_2)
+                @test !Model.equal(group_list_01, group_list_10)
+            end
         end
 
-        @testset "parent" begin
-            inner = Model.Leaf("inner")
-            outer = Model.Group([inner])
-
-            inner.parent = WeakRef(outer)
-
-            @test isa(inner.parent, WeakRef)
-
-            @test AbstractTrees.parent(inner) === outer
-            @test AbstractTrees.parent(outer) === nothing
-        end
-
-        @testset "tools" begin
-            root = Model.Group([
-                Model.Leaf(1),
-                Model.Group([
-                    Model.Leaf(2),
-                    Model.Leaf(3)
-                ]),
-                Model.Leaf(4)
-            ])
-
-            @testset "print_tree" begin
-                io = IOBuffer()
-                AbstractTrees.print_tree(io, root)
-                out = String(take!(io))
-
-                @test occursin("Leaf",  out)
-                @test occursin("Group", out)
+        @testset "Mixed" begin
+            
+            @testset "Single" begin
+                leaf   = Model.Leaf(0)
+                group  = Model.Group([leaf])
+                @test !Model.equal(leaf, group)
             end
 
-            @testset "Leaves" begin
-                val = collect(AbstractTrees.Leaves(root))
-                @test length(val) == 4
-            end
+            @testset "Vector" begin
+                leaf   = Model.Leaf(0)
+                group  = Model.Group([leaf])
 
-            @testset "PreOrderDFS" begin
-                val = collect(AbstractTrees.PreOrderDFS(root))
-                @test length(val) == 6
-            end
+                node_list_l = [leaf]
+                node_list_g = [group]
 
-            @testset "PostOrderDFS" begin
-                val = collect(AbstractTrees.PostOrderDFS(root))
-                @test length(val) == 6
+                node_list_lg = [leaf,  group]
+                node_list_gl = [group, leaf]
+
+                @test !Model.equal(node_list_l,  node_list_g)
+                @test !Model.equal(node_list_l,  node_list_lg)
+                @test  Model.equal(node_list_lg, node_list_lg)
+                @test !Model.equal(node_list_lg, node_list_gl)
             end
         end
     end
