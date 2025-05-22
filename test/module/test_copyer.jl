@@ -4,22 +4,28 @@ using TreeStateMachine
 @testset "Copyer" begin
 
     @testset "Leaf" begin
-        f1 = (x -> x)
-        f2 = (x -> x * 2)
-
-        leaf_origin = Model.Leaf(123; callback_enter=[f1], callback_exit=[f1, f2])
-        leaf_copy   = Copyer.copy(leaf_origin)
+        leaf_origin = Model.Leaf(
+            123;
+            callback_list = Dict(
+                :enter => Symbol[],
+                :exit  => Symbol[]
+            )
+        )
+        leaf_copy = Copyer.copy(leaf_origin)
 
         @test Model.equal(leaf_origin, leaf_copy)
     end
 
     @testset "Group" begin
         leaf = Model.Leaf(123)
-        f1   = (x -> x)
-        f2   = (x -> x * 2)
-
-        group_origin = Model.Group([leaf, leaf]; callback_enter=[f1], callback_exit=[f1, f2])
-        group_copy   = Copyer.copy(group_origin)
+        group_origin = Model.Group(
+            [leaf, leaf];
+            callback_list = Dict(
+                :enter => Symbol[],
+                :exit  => Symbol[]
+            )
+        )
+        group_copy = Copyer.copy(group_origin)
 
         @test Model.equal(group_origin, group_copy)
     end

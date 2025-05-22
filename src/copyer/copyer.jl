@@ -8,9 +8,8 @@ function copy(leaf::Model.Leaf)::Model.Leaf
     value_new = deepcopy(leaf.value)
     return Model.Leaf(
         value_new;
-        parent         = leaf.parent,
-        callback_enter = Base.copy(leaf.callback_enter),
-        callback_exit  = Base.copy(leaf.callback_exit)
+        parent        = leaf.parent,
+        callback_list = Base.copy(leaf.callback_list)
     )
 end
 
@@ -20,8 +19,7 @@ function copy(group::Model.Group)::Model.Group
         child_index_current = group.child_index_current,
         parent              = group.parent,
         mode                = group.mode,
-        callback_enter      = Base.copy(group.callback_enter),
-        callback_exit       = Base.copy(group.callback_exit)
+        callback_list       = Base.copy(group.callback_list)
     )
     for child in group.child_list
         child_new = copy(child)

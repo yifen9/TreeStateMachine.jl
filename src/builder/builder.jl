@@ -21,9 +21,7 @@ function build(data::Model.Group)::Model.Group
 end
 
 function build(data::NamedTuple)::Model.Node
-    callback_enter = get(data, :callback_enter, Function[])
-    callback_exit  = get(data, :callback_exit,  Function[])
-
+    callback_list = get(data, :callback_list, Dict{Symbol, Vector{Symbol}}())
     if haskey(data, :child_list) && data.child_list !== nothing
         data_child_list = data.child_list
         if isempty(data_child_list)
@@ -33,8 +31,7 @@ function build(data::NamedTuple)::Model.Node
             group = Model.Group(
                 Vector{Model.Node}();
                 mode,
-                callback_enter,
-                callback_exit
+                callback_list
             )
             for data_child in data_child_list
                 child = build(data_child)
@@ -48,8 +45,7 @@ function build(data::NamedTuple)::Model.Node
             value = data.value
             return Model.Leaf(
                 value;
-                callback_enter,
-                callback_exit
+                callback_list
             )
         else
             error("Build empty Leaf")

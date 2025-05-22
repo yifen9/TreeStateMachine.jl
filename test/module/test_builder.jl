@@ -49,28 +49,30 @@ using TreeStateMachine
 
                 @test isa(leaf, Model.Leaf)
 
-                @test leaf.value          === 123
-                @test leaf.parent         === nothing
-                @test leaf.callback_enter ==  Function[]
-                @test leaf.callback_exit  ==  Function[]
+                @test leaf.value         === 123
+                @test leaf.parent        === nothing
+                @test leaf.callback_list ==  Dict()
             end
 
             @testset "Custom" begin
-                f1 = (x -> x)
-                f2 = (x -> x * 2)
-
-                leaf_1 = Builder.build((value = 123, callback_enter = [f1]))
-                leaf_2 = Builder.build((value = 123, callback_exit  = [f1, f2]))
-                leaf_3 = Builder.build((value = 123, callback_enter = [f1], callback_exit = [f1, f2]))
-
-                @test leaf_1.callback_enter == Function[f1]
-                @test leaf_1.callback_exit  == Function[]
-                
-                @test leaf_2.callback_enter == Function[]
-                @test leaf_2.callback_exit  == Function[f1, f2]
-
-                @test leaf_3.callback_enter == Function[f1]
-                @test leaf_3.callback_exit  == Function[f1, f2]
+                leaf_1 = Builder.build((
+                    value         = 123,
+                    callback_list = Dict(:enter => Symbol[:f1])
+                ))
+                leaf_2 = Builder.build((
+                    value = 123,
+                    callback_list = Dict(:exit => Symbol[:f1, :f2])
+                ))
+                leaf_3 = Builder.build((
+                    value = 123,
+                    callback_list = Dict(
+                        :enter => Symbol[:f1],
+                        :exit  => Symbol[:f1, :f2]
+                    )
+                ))
+                @test leaf_1.callback_list[:enter] == [:f1]
+                @test leaf_2.callback_list[:exit]  == [:f1, :f2]
+                @test leaf_3.callback_list         == Dict(:enter => [:f1], :exit => [:f1, :f2])
             end
         end
 
@@ -101,14 +103,11 @@ using TreeStateMachine
             @testset "Custom" begin
                 leaf = (value = 123,)
 
-                f1 = (x -> x)
-                f2 = (x -> x * 2)
+                group_1 = Builder.build((child_list=[leaf], callback_list = Dict(:enter => [:f1])))
+                group_2 = Builder.build((child_list=[leaf], callback_list = Dict(:exit  => [:f1, :f2])))
 
-                group_1 = Builder.build((child_list=[leaf], callback_enter = [f1]))
-                group_2 = Builder.build((child_list=[leaf], callback_exit  = [f1, f2]))
-
-                group_1_c = Model.Group([Model.Leaf(123)]; callback_enter = [f1])
-                group_2_c = Model.Group([Model.Leaf(123)]; callback_exit  = [f1, f2])
+                group_1_c = Model.Group([Model.Leaf(123)]; callback_list = Dict(:enter => [:f1]))
+                group_2_c = Model.Group([Model.Leaf(123)]; callback_list = Dict(:exit  => [:f1, :f2]))
 
                 group_1_c.child_list[1].parent = WeakRef(group_1_c)
                 group_2_c.child_list[1].parent = WeakRef(group_2_c)

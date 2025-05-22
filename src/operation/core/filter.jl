@@ -18,8 +18,7 @@ function filter(
                     kept;
                     parent         = nothing,
                     mode           = root.mode,
-                    callback_enter = root.callback_enter,
-                    callback_exit  = root.callback_exit
+                    callback_list  = root.callback_list
                 )
                 group_new.child_index_current = root.child_index_current
                 for child_new in group_new.child_list

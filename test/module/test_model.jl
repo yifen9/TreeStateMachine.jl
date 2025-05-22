@@ -14,27 +14,27 @@ using TreeStateMachine
 
                 @test leaf.value          === 123
                 @test leaf.parent         === nothing
-                @test leaf.callback_enter ==  Function[]
-                @test leaf.callback_exit  ==  Function[]
+                @test leaf.callback_list  ==  Dict()
             end
 
             @testset "Custom" begin
                 parent = WeakRef(Model.Leaf(123))
 
-                f1 = (x -> x)
-                f2 = (x -> x * 2)
-
                 leaf = Model.Leaf(
                     "abc";
                     parent,
-                    callback_enter = [f1],
-                    callback_exit  = [f1, f2]
+                    callback_list = Dict(
+                        :enter => Symbol[],
+                        :exit  => Symbol[]
+                    )
                 )
 
-                @test leaf.value          === "abc"
-                @test leaf.parent         === parent
-                @test leaf.callback_enter ==  [f1]
-                @test leaf.callback_exit  ==  [f1, f2]
+                @test leaf.value         === "abc"
+                @test leaf.parent        === parent
+                @test leaf.callback_list ==  Dict(
+                    :enter => Symbol[],
+                    :exit  => Symbol[]
+                )
             end
 
             @testset "Error" begin
@@ -56,8 +56,7 @@ using TreeStateMachine
                 @test group.child_index_current === 1
                 @test group.parent              === nothing
                 @test group.mode                === :sequential
-                @test group.callback_enter      ==  Function[]
-                @test group.callback_exit       ==  Function[]
+                @test group.callback_list       ==  Dict()
             end
 
             @testset "Custom" begin
@@ -66,23 +65,24 @@ using TreeStateMachine
 
                 parent = WeakRef(Model.Group([leaf_1]))
 
-                f1 = (x -> x)
-                f2 = (x -> x * 2)
-
                 group = Model.Group(
                     [leaf_2];
                     parent,
-                    mode           = :parallel,
-                    callback_enter = [f1],
-                    callback_exit  = [f1, f2]
+                    mode = :parallel,
+                    callback_list = Dict(
+                        :enter => Symbol[],
+                        :exit  => Symbol[]
+                    )
                 )
 
                 @test group.child_list          ==  [leaf_2]
                 @test group.child_index_current === 1
                 @test group.parent              === parent
                 @test group.mode                === :parallel
-                @test group.callback_enter      ==  [f1]
-                @test group.callback_exit       ==  [f1, f2]
+                @test group.callback_list       ==  Dict(
+                    :enter => Symbol[],
+                    :exit  => Symbol[]
+                )
             end
 
             @testset "Error" begin
@@ -102,8 +102,7 @@ using TreeStateMachine
             @test group_lg.child_index_current === 1
             @test group_lg.parent              === nothing
             @test group_lg.mode                === :sequential
-            @test group_lg.callback_enter      ==  Function[]
-            @test group_lg.callback_exit       ==  Function[]
+            @test group_lg.callback_list       ==  Dict()
         end
     end
 
@@ -115,15 +114,20 @@ using TreeStateMachine
                 leaf_0 = Model.Leaf(0)
                 leaf_1 = Model.Leaf(123)
                 leaf_2 = Model.Leaf(123)
-                leaf_3 = Model.Leaf(123; parent         = WeakRef(leaf_0))
-                leaf_4 = Model.Leaf(123; callback_enter = [(x -> x)])
-                leaf_5 = Model.Leaf(123; callback_exit  = [(x -> x)])
+                leaf_3 = Model.Leaf(123; parent        = WeakRef(leaf_0))
+                leaf_4 = Model.Leaf(123; callback_list = Dict(:enter => Symbol[]))
+                leaf_5 = Model.Leaf(123; callback_list = Dict(:exit  => Symbol[]))
+                leaf_6 = Model.Leaf(123; callback_list = Dict(:exit  => Symbol[:f1]))
+                leaf_7 = Model.Leaf(123; callback_list = Dict(:exit  => Symbol[:f2]))
 
                 @test !Model.equal(leaf_0, leaf_1)
                 @test  Model.equal(leaf_1, leaf_2)
                 @test !Model.equal(leaf_1, leaf_3)
                 @test !Model.equal(leaf_1, leaf_4)
                 @test !Model.equal(leaf_1, leaf_5)
+                @test !Model.equal(leaf_4, leaf_5)
+                @test !Model.equal(leaf_5, leaf_6)
+                @test !Model.equal(leaf_6, leaf_7)
             end
 
             @testset "Vector" begin
@@ -160,9 +164,11 @@ using TreeStateMachine
                 group_22 = Model.Group([leaf_2, leaf_2])
                 group_01 = Model.Group([leaf_0, leaf_1])
                 group_10 = Model.Group([leaf_1, leaf_0])
-                group_33 = Model.Group([leaf_1, leaf_1]; parent         = WeakRef(group_0))
-                group_44 = Model.Group([leaf_1, leaf_1]; callback_enter = [(x -> x)])
-                group_55 = Model.Group([leaf_1, leaf_1]; callback_exit  = [(x -> x)])
+                group_33 = Model.Group([leaf_1, leaf_1]; parent        = WeakRef(group_0))
+                group_44 = Model.Group([leaf_1, leaf_1]; callback_list = Dict(:enter => Symbol[]))
+                group_55 = Model.Group([leaf_1, leaf_1]; callback_list = Dict(:exit  => Symbol[]))
+                group_66 = Model.Group([leaf_1, leaf_1]; callback_list = Dict(:exit  => Symbol[:f1]))
+                group_77 = Model.Group([leaf_1, leaf_1]; callback_list = Dict(:exit  => Symbol[:f2]))
 
                 @test !Model.equal(group_0,  group_00)
                 @test !Model.equal(group_00, group_11)
@@ -171,6 +177,9 @@ using TreeStateMachine
                 @test !Model.equal(group_11, group_33)
                 @test !Model.equal(group_11, group_44)
                 @test !Model.equal(group_11, group_55)
+                @test !Model.equal(group_44, group_55)
+                @test !Model.equal(group_55, group_66)
+                @test !Model.equal(group_66, group_77)
             end
 
             @testset "Vector" begin

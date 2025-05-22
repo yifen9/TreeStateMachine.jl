@@ -1,27 +1,23 @@
 mutable struct Leaf{T} <: Node
     value::T
     parent::Union{WeakRef, Nothing}
-    callback_enter::Vector{Function}
-    callback_exit::Vector{Function}
+    callback_list::Dict{Symbol, Vector{Symbol}}
 end
 
 Leaf(
     value::T;
-    parent::Union{WeakRef, Nothing}    = nothing,
-    callback_enter::Vector{<:Function} = Function[],
-    callback_exit::Vector{<:Function}  = Function[]
+    parent::Union{WeakRef, Nothing}             = nothing,
+    callback_list::Dict{Symbol, Vector{Symbol}} = Dict{Symbol, Vector{Symbol}}()
 ) where T = Leaf{T}(
     value,
     parent,
-    Vector{Function}(callback_enter),
-    Vector{Function}(callback_exit)
+    callback_list
 )
 
 function equal(a::Leaf, b::Leaf)::Bool
     return a.value == b.value &&
            typeof(a.parent) === typeof(b.parent) &&
-           a.callback_enter == b.callback_enter &&
-           a.callback_exit  == b.callback_exit
+           a.callback_list  == b.callback_list
 end
 
 function equal(leaf_a::Vector{<:Leaf}, leaf_b::Vector{<:Leaf})::Bool
