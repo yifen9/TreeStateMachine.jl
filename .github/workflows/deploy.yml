@@ -32,7 +32,7 @@ jobs:
 
         git checkout main -- src
 
-        rsync -av --delete src/ .
+        rsync -av --delete src/ . || true
 
         git add .
         git commit -m "ci: sync src/ to main-src"
