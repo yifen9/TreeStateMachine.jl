@@ -29,7 +29,7 @@ jobs:
         fi
 
         git rm -rf . 
-        cp -R src/. . 
+        cp -R src/.. 
 
         git add .
         git commit -m "ci: sync src/ to main-src branch"
