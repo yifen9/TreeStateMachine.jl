@@ -30,10 +30,12 @@ jobs:
 
         git rm -rf .
 
+        git checkout main -- src
+
         rsync -av --delete src/ .
 
         git add .
-        git commit -m "ci: sync src/ to main-src branch"
+        git commit -m "ci: sync src/ to main-src"
         git push origin main-src --force
 
         git checkout main
