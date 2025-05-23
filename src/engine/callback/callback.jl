@@ -6,15 +6,15 @@ using ..Model
 
 const REGISTRY = Dict{Symbol, Function}()
 
-_exist(name::Symbol) = haskey(REGISTRY, name)
+_exist(name::Symbol)::Bool = haskey(REGISTRY, name)
 
-function set!(name::Symbol, fn::Function)
+function set!(name::Symbol, fn::Function)::Nothing
     _exist(name) && @warn "Callback `$(name)` overrided"
     REGISTRY[name] = fn
     return nothing
 end
 
-function get_function(name::Symbol)
+function get_function(name::Symbol)::Function
     if(_exist(name))
         return REGISTRY[name]
     else
@@ -22,11 +22,11 @@ function get_function(name::Symbol)
     end
 end
 
-function get_name_list()
+function get_name_list()::Vector{Symbol}
     return collect(keys(REGISTRY))
 end
 
-function run(node::Model.Node, name::Symbol)
+function run(node::Model.Node, name::Symbol)::Nothing
     callback_list = node.callback_list
     if haskey(callback_list, name)
         callback_list_name = callback_list[name]

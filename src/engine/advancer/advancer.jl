@@ -6,7 +6,7 @@ using ..Model
 using ..Callback
 using ..Mode
 
-function advance!(node::Model.Node)
+function advance!(node::Model.Node)::Nothing
     if node.status === :idle
         node.status = :running
         Callback.run(node, :enter)
