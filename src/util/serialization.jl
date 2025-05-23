@@ -2,7 +2,7 @@ module Serialization
 
 export to_namedtuple, to_dict, json_export, json_import, dot_export
 
-using JSON3
+using JSON
 
 using ..Engine
 using ..Operation
@@ -118,7 +118,7 @@ function json_export(data::Union{Model.Node, NamedTuple, Dict{String, Any}}; pat
     end
     _dict_normalize!(dict, Dict("parent" => (v -> isa(v, Bool) ? v : (isa(v, WeakRef) ? true : false))))
     if path === nothing
-        return JSON3.write(dict)
+        return JSON.json(dict)
     else
         open(path, "w") do io
             write(io, json_export(dict))
@@ -129,7 +129,7 @@ end
 
 function json_import(source::AbstractString; return_type::Type=Dict{String,Any})
     text = isfile(source) ? read(source, String) : source
-    dict = JSON3.read(text, Dict{String, Any})
+    dict = JSON.parse(text)
 
     _dict_normalize!(dict, Dict(
         "mode"          => (v -> isa(v, String)            ? Symbol(v)                       : v),

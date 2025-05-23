@@ -1,8 +1,6 @@
 using Test
 using TreeStateMachine.Engine
 
-using JSON3
-
 @testset "Serialization" begin
 
     @testset "Node <-> NamedTuple <-> Dict <-> JSON" begin
