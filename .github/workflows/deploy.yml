@@ -22,19 +22,21 @@ jobs:
 
     - name: Update main-src
       run: |
-        if git show-ref --verify --quiet refs/heads/main-src; then
+        if git rev-parse --verify main-src; then
           git checkout main-src
         else
           git checkout --orphan main-src
         fi
 
-        git rm -rf . 
-        
+        git rm -rf .
+
         rsync -av --delete src/ .
 
         git add .
         git commit -m "ci: sync src/ to main-src branch"
         git push origin main-src --force
+
+        git checkout main
 
     - name: Checkout
       run: git checkout main
