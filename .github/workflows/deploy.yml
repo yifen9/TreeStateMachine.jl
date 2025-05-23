@@ -34,7 +34,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: src
-          path: .
+          path: src
 
       - name: Push to main-src
         env:
