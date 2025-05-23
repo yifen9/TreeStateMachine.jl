@@ -34,7 +34,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: src
-          path: src/
+          path: .
 
       - name: Push to main-src
         env:
@@ -47,7 +47,6 @@ jobs:
           git checkout -B main-src
           git rm -rf . || true
 
-          git add src
           git commit -m "Release from ${{ github.sha }}"
           git push --force https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} main-src
 
