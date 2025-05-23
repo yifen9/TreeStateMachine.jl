@@ -2,9 +2,7 @@ module Operation
 
 export set!, get_function, get_name_list
 
-using ..Model
-using ..Builder
-using ..Copyer
+using ..Engine
 
 const REGISTRY = Dict{Symbol, Function}()
 const DIR_CORE = joinpath(@__DIR__, "core")

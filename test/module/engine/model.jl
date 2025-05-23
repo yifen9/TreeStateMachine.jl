@@ -1,5 +1,5 @@
 using Test
-using TreeStateMachine
+using TreeStateMachine.Engine
 
 @testset "Model" begin
 

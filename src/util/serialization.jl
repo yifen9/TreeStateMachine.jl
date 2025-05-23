@@ -5,8 +5,7 @@ export to_namedtuple, to_dict, json_export, json_import, dot_export
 using AbstractTrees
 using JSON3
 
-using ..Model
-using ..Builder
+using ..Engine
 using ..Operation
 
 function _dict_normalize!(dict::Dict{String, Any}, map::Dict{String, <:Function})

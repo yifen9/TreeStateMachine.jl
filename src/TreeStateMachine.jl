@@ -1,12 +1,9 @@
 module TreeStateMachine
 
-export Model, Builder, Copyer, Operation, Serialization, Advancer
+export Engine, Operation, Serialization
 
-include(joinpath("model",     "model.jl"))
-include(joinpath("copyer",    "copyer.jl"))
-include(joinpath("builder",   "builder.jl"))
+include(joinpath("engine",    "engine.jl"))
 include(joinpath("operation", "operation.jl"))
 include(joinpath("util",      "serialization.jl"))
-include(joinpath("advancer",  "advancer.jl"))
 
 end

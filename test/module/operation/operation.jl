@@ -1,7 +1,7 @@
 using Test
-using TreeStateMachine
+using TreeStateMachine.Engine
 
-@testset "Operation" begin
+@testset "Core" begin
 
     @testset "flatten" begin
         node = Builder.build([1, [2, 3], 4])
