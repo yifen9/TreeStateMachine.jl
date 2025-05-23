@@ -47,6 +47,7 @@ jobs:
           git checkout -B main-src
           git rm -rf . || true
 
+          git add .
           git commit -m "Release from ${{ github.sha }}"
           git push --force https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} main-src
 
