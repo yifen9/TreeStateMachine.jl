@@ -21,6 +21,7 @@ function build(data::Model.Group)::Model.Group
 end
 
 function build(data::NamedTuple)::Model.Node
+    status        = get(data, :status,        :idle)
     callback_list = get(data, :callback_list, Dict{Symbol, Vector{Symbol}}())
     if haskey(data, :child_list) && data.child_list !== nothing
         data_child_list = data.child_list
@@ -31,6 +32,7 @@ function build(data::NamedTuple)::Model.Node
             group = Model.Group(
                 Vector{Model.Node}();
                 mode,
+                status,
                 callback_list
             )
             for data_child in data_child_list
@@ -45,6 +47,7 @@ function build(data::NamedTuple)::Model.Node
             value = data.value
             return Model.Leaf(
                 value;
+                status,
                 callback_list
             )
         else

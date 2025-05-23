@@ -30,6 +30,7 @@ function to_namedtuple(data::Union{AbstractVector, Model.Node, Dict{String, Any}
         if isa(data, Model.Leaf)
             return (
                 value         = data.value,
+                status        = data.status,
                 parent        = isa(data.parent, WeakRef) ? true : false,
                 callback_list = data.callback_list
             )
@@ -38,8 +39,9 @@ function to_namedtuple(data::Union{AbstractVector, Model.Node, Dict{String, Any}
             return (
                 child_list          = child_namedtuple,
                 child_index_current = data.child_index_current,
-                parent              = isa(data.parent, WeakRef) ? true : false,
                 mode                = data.mode,
+                status              = data.status,
+                parent              = isa(data.parent, WeakRef) ? true : false,
                 callback_list       = data.callback_list
             )
         end
@@ -51,8 +53,9 @@ function to_namedtuple(data::Union{AbstractVector, Model.Node, Dict{String, Any}
                 return (
                     child_list          = child_list,
                     child_index_current = data["child_index_current"],
-                    parent              = data["parent"],
                     mode                = data["mode"],
+                    status              = data["status"],
+                    parent              = data["parent"],
                     callback_list       = data["callback_list"]
                 )
             else
@@ -62,6 +65,7 @@ function to_namedtuple(data::Union{AbstractVector, Model.Node, Dict{String, Any}
             if haskey(data, "value")
                 return (
                     value          = data["value"],
+                    status         = data["status"],
                     parent         = data["parent"],
                     callback_list  = data["callback_list"]
                 )
@@ -78,13 +82,14 @@ function to_dict(data::Union{AbstractVector, Model.Node, NamedTuple})
     elseif isa(data, Model.Node)
         return to_dict(to_namedtuple(data))
     else
-        key_leaf  = (:value, :parent, :callback_list)
-        key_group = (:child_list, :child_index_current, :parent, :mode, :callback_list)
+        key_leaf  = (:value, :status, :parent, :callback_list)
+        key_group = (:child_list, :child_index_current, :mode, :status, :parent, :callback_list)
 
         key_list = Tuple(keys(data))
         if key_list == key_leaf
             return Dict(
                 "value"         => data.value,
+                "status"        => data.status,
                 "parent"        => data.parent,
                 "callback_list" => data.callback_list
             )
@@ -92,8 +97,9 @@ function to_dict(data::Union{AbstractVector, Model.Node, NamedTuple})
             return Dict(
                 "child_list"          => [ to_dict(item) for item in data.child_list ],
                 "child_index_current" => data.child_index_current,
-                "parent"              => data.parent,
                 "mode"                => data.mode,
+                "status"              => data.status,
+                "parent"              => data.parent,
                 "callback_list"       => data.callback_list
             )
         else
@@ -128,8 +134,9 @@ function json_import(source::AbstractString; return_type::Type=Dict{String,Any})
     dict = JSON3.read(text, Dict{String, Any})
 
     _dict_normalize!(dict, Dict(
-        "parent"        => (v -> Bool(v)),
         "mode"          => (v -> isa(v, String)            ? Symbol(v)                       : v),
+        "status"        => (v -> isa(v, String)            ? Symbol(v)                       : v),
+        "parent"        => (v -> Bool(v)),
         "callback_list" => (v -> isa(v, Dict{String, Any}) ? Dict{Symbol, Vector{Symbol}}(v) : v)
     ))
 

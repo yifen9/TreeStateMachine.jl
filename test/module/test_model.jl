@@ -13,6 +13,7 @@ using TreeStateMachine
                 @test isa(leaf, Model.Leaf{Int})
 
                 @test leaf.value          === 123
+                @test leaf.status         === :idle
                 @test leaf.parent         === nothing
                 @test leaf.callback_list  ==  Dict()
             end
@@ -22,6 +23,7 @@ using TreeStateMachine
 
                 leaf = Model.Leaf(
                     "abc";
+                    status = :running,
                     parent,
                     callback_list = Dict(
                         :enter => Symbol[],
@@ -30,6 +32,7 @@ using TreeStateMachine
                 )
 
                 @test leaf.value         === "abc"
+                @test leaf.status        === :running
                 @test leaf.parent        === parent
                 @test leaf.callback_list ==  Dict(
                     :enter => Symbol[],
@@ -54,8 +57,9 @@ using TreeStateMachine
 
                 @test group.child_list          ==  [leaf_1, leaf_2]
                 @test group.child_index_current === 1
-                @test group.parent              === nothing
                 @test group.mode                === :sequential
+                @test group.status              === :idle
+                @test group.parent              === nothing
                 @test group.callback_list       ==  Dict()
             end
 
@@ -67,8 +71,9 @@ using TreeStateMachine
 
                 group = Model.Group(
                     [leaf_2];
+                    mode          = :parallel,
+                    status        = :running,
                     parent,
-                    mode = :parallel,
                     callback_list = Dict(
                         :enter => Symbol[],
                         :exit  => Symbol[]
@@ -77,8 +82,9 @@ using TreeStateMachine
 
                 @test group.child_list          ==  [leaf_2]
                 @test group.child_index_current === 1
-                @test group.parent              === parent
                 @test group.mode                === :parallel
+                @test group.status              === :running
+                @test group.parent              === parent
                 @test group.callback_list       ==  Dict(
                     :enter => Symbol[],
                     :exit  => Symbol[]
@@ -100,8 +106,9 @@ using TreeStateMachine
 
             @test group_lg.child_list          ==  [leaf, group_l]
             @test group_lg.child_index_current === 1
-            @test group_lg.parent              === nothing
             @test group_lg.mode                === :sequential
+            @test group_lg.status              === :idle
+            @test group_lg.parent              === nothing
             @test group_lg.callback_list       ==  Dict()
         end
     end

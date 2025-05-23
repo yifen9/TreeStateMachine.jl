@@ -6,6 +6,7 @@ using TreeStateMachine
     @testset "Leaf" begin
         leaf_origin = Model.Leaf(
             123;
+            status        = :running,
             callback_list = Dict(
                 :enter => Symbol[],
                 :exit  => Symbol[]
@@ -20,6 +21,7 @@ using TreeStateMachine
         leaf = Model.Leaf(123)
         group_origin = Model.Group(
             [leaf, leaf];
+            status        = :running,
             callback_list = Dict(
                 :enter => Symbol[],
                 :exit  => Symbol[]
@@ -31,10 +33,11 @@ using TreeStateMachine
     end
 
     @testset "Mixed" begin
-        leaf            = Model.Leaf(123)
-        group_g         = Model.Group([leaf])
-        group_lg_origin = Model.Group([leaf, group_g])
-        group_lg_copy   = Copyer.copy(group_lg_origin)
+        leaf                         = Model.Leaf(123)
+        group_g                      = Model.Group([leaf])
+        group_g.child_list[1].parent = WeakRef(group_g)
+        group_lg_origin              = Model.Group([leaf, group_g])
+        group_lg_copy                = Copyer.copy(group_lg_origin)
         @test Model.equal(group_lg_origin, group_lg_copy)
     end
 end
