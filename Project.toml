@@ -1,8 +1,0 @@
-name = "TreeStateMachine"
-uuid = "a8838fb1-245e-4e5a-a183-4fd1742274e9"
-authors = ["Li Yifeng <yifen9@yandex.com>"]
-version = "0.1.0"
-
-[deps]
-JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
